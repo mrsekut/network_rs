@@ -1,18 +1,26 @@
+{ rustDate ? "2021-03-01" }:
+
 let
-  moz_overlay = import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz);
-  pkgs = import <nixpkgs> {
-    overlays = [ moz_overlay ];
-  };
-  # pkgs = import (fetchTarball("https://github.com/NixOS/nixpkgs/archive/04ac9dcd311956d1756d77f4baf9258392ee7bdd.tar.gz")) {};
+  mozillaOverlay = import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz);
 
-in pkgs.mkShell {
+  nixpkgs = import <nixpkgs> { overlays = [ mozillaOverlay ]; };
 
-  buildInputs = with pkgs; [
+  # toolchain = with nixpkgs; (rustChannelOf { date = rustDate; channel = "nightly"; });
+
+  # rust_nightly = toolchain.rust.override {
+  #   extensions = [ "rust-src" "rust-analysis" ];
+  # };
+
+in nixpkgs.mkShell {
+
+  buildInputs = with nixpkgs; [
+    # rust_nightly
     cargo
     rustc
     rustfmt
     rustup
     rls
+
   ];
 
   shellHook = ''
@@ -21,5 +29,5 @@ in pkgs.mkShell {
   '';
 
   # See https://discourse.nixos.org/t/rust-src-not-found-and-other-misadventures-of-developing-rust-on-nixos/11570/3?u=samuela.
-  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+  RUST_SRC_PATH = "${nixpkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 }
